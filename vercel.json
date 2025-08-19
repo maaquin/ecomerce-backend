@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "name": "bank-back",
+    "name": "ecomerce",
     "builds": [
         {
             "src": "index.js",

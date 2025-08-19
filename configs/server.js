@@ -58,12 +58,6 @@ class Server {
         this.app.use(this.imgPath, imgRoutes);
         this.app.use(this.configPath, configRoutes);
     }
-
-    listen() {
-        this.app.listen(this.port, () => {
-            console.log(`Server running on port ${this.port}`);
-        });
-    }
 }
 
 export default Server;
