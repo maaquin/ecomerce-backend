@@ -44,7 +44,7 @@ class Server {
 
     middlewares() {
         this.app.use(express.urlencoded({ extended: false }));
-        this.app.use(cors(corsOptions));
+        this.app.use(cors());
         this.app.use(express.json());
         this.app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
         this.app.use(morgan('dev'));
