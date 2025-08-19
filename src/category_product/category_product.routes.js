@@ -4,7 +4,7 @@ import {
     getAllCategoryProduct,
     getAllGoodCategoryProduct,
     getCategoryProductById,
-    UpdateCategoryProduct,
+    updateCategoryProduct,
     activateCategoryProduct,
     deactivateCategoryProduct
 } from "./category_product.controller.js";
@@ -16,7 +16,7 @@ router.post("/", [validarCampos], createCategoryProduct);
 router.get("/", getAllCategoryProduct);
 router.get("/good", getAllGoodCategoryProduct);
 router.get("/:id", getCategoryProductById);
-router.put("/update/:id", [validarCampos], UpdateCategoryProduct);
+router.put("/update/:id", [validarCampos], updateCategoryProduct);
 router.put("/activate/:id", activateCategoryProduct);
 router.put("/deactivate/:id", deactivateCategoryProduct);
 

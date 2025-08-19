@@ -1,18 +1,18 @@
 import { Router } from "express";
 import { 
     getConfig,
-    UpdateConfig,
+    updateConfig,
 
-    VerifyLink,
-    VerifyToken
+    verifyLink,
+    verifyToken
 } from "./config.controller.js";
 
 const router = Router();
 
 router.get("/", getConfig);
-router.put("/", UpdateConfig);
+router.put("/", updateConfig);
 
-router.get("/verify", VerifyToken);
-router.post("/verify", VerifyLink);
+router.get("/verify", verifyToken);
+router.post("/verify", verifyLink);
 
 export default router;

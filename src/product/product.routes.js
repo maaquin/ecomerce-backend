@@ -6,8 +6,7 @@ import {
     getProductById,
     updateProduct,
     activateProduct,
-    deactivateProduct,
-    getProductsByType
+    deactivateProduct
 } from "./product.controller.js";
 import { validarCampos } from "../middlewares/validar-campos.js";
 
@@ -16,7 +15,6 @@ const router = Router()
 router.post("/", [validarCampos], createProduct);
 router.get("/", getAllProducts);
 router.get("/good", getAllGoodProducts);
-router.post("/type", getProductsByType);
 router.get("/:id", getProductById);
 router.put("/update/:id", [validarCampos], updateProduct);
 router.put("/activate/:id", activateProduct);
