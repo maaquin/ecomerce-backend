@@ -18,7 +18,7 @@ import { connection } from './mysql.js';
 class Server {
     constructor() {
         this.app = express();
-        this.port = process.env.PORT || 8080;
+        this.port = process.env.PORT;
 
         this.billPath = '/century/v1/bill';
         this.categorysPath = '/century/v1/category';
@@ -46,7 +46,7 @@ class Server {
         this.app.use(express.urlencoded({ extended: false }));
         this.app.use(cors(corsOptions));
         this.app.use(express.json());
-        this.app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
+        this.app.use(helmet());
         this.app.use(morgan('dev'));
     }
 
