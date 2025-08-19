@@ -8,11 +8,16 @@ const handleError = (res, error, defaultMessage) => {
 };
 
 const handleResponse = (res, data, successMessage, notFoundMessage, errorMessage, statusCode = 200) => {
-    if (data && data.length > 0) {
-        res.status(statusCode).json(data);
-    } else if (data && data.affectedRows > 0) {
+    // Si 'data' es un array, siempre devolvemos 200, incluso si está vacío.
+    if (Array.isArray(data)) {
+        res.status(200).json(data);
+        return;
+    }
+    // Si es un resultado de UPDATE/DELETE/INSERT que fue exitoso
+    if (data && data.affectedRows > 0) {
         res.status(statusCode).json({ message: successMessage });
     } else {
+        // Solo enviamos 404 si no es un array y no afectó filas (ej. GET por ID fallido)
         res.status(404).json({ message: notFoundMessage });
     }
 };
