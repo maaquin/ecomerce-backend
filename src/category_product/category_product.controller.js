@@ -1,93 +1,136 @@
-import { pool } from '../../configs/mysql.js'
+import { pool } from '../../configs/mysql.js';
 
+// Helper para manejar las respuestas y errores de forma consistente
+const handleResponse = (res, data, successMessage, notFoundMessage, errorMessage, statusCode = 200) => {
+    if (data && data.length > 0) {
+        res.status(statusCode).json(data);
+    } else if (data && data.affectedRows > 0) {
+        res.status(statusCode).json({ message: successMessage });
+    } else {
+        res.status(404).json({ message: notFoundMessage });
+    }
+};
+
+const handleError = (res, error, defaultMessage) => {
+    console.error(defaultMessage, error);
+    res.status(500).json({ message: defaultMessage, error: { message: error.message } });
+};
+
+
+/**
+ * @desc    Crea una nueva categoría de producto
+ * @route   POST /api/category
+ */
 export const createCategoryProduct = async (req, res) => {
     const { name, img, description, weight } = req.body;
+    const sqlQuery = 'INSERT INTO Category_Product (name, img, description, weight, enable) VALUES (?, ?, ?, ?, false)';
+
     try {
-        const [result] = await pool.query(
-            'CALL InsertCategoryProduct(?, ?, ?, ?)',
-            [name, img, description, weight]
-        );
-        res.status(201).json({ message: 'Category product created successfully', result });
+        const [result] = await pool.query(sqlQuery, [name, img, description, weight]);
+        res.status(201).json({ message: 'Category product created successfully', categoryId: result.insertId });
     } catch (error) {
-        res.status(500).json({ message: 'Error creating Category product', error });
+        handleError(res, error, 'Error creating category product');
     }
 };
 
+/**
+ * @desc    Obtiene TODAS las categorías de producto (habilitadas y deshabilitadas)
+ * @route   GET /api/category/all
+ */
 export const getAllCategoryProduct = async (req, res) => {
+    const sqlQuery = 'SELECT * FROM Category_Product';
     try {
-        const [category] = await pool.query('CALL GetAllCategoryProducts()');
-        if (category.length > 0) {
-            res.status(200).json(category);
-        } else {
-            res.status(404).json({ message: 'No categorys in data base' });
-        }
+        const [categories] = await pool.query(sqlQuery);
+        handleResponse(res, categories, null, 'No categories found in the database', 'Error fetching categories');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching categorys', error });
+        handleError(res, error, 'Error fetching categories');
     }
 };
 
+/**
+ * @desc    Obtiene solo las categorías de producto HABILITADAS
+ * @route   GET /api/category
+ */
 export const getAllGoodCategoryProduct = async (req, res) => {
+    const sqlQuery = 'SELECT * FROM Category_Product WHERE enable = true';
     try {
-        const [categorys] = await pool.query('CALL GetAllGoodCategoryProduct()');
-        if (categorys.length > 0) {
-            res.status(200).json(categorys);
-        } else {
-            res.status(404).json({ message: 'No categorys in data base' });
-        }
+        const [categories] = await pool.query(sqlQuery);
+        handleResponse(res, categories, null, 'No enabled categories found', 'Error fetching enabled categories');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching categorys', error });
+        handleError(res, error, 'Error fetching enabled categories');
     }
 };
 
+/**
+ * @desc    Obtiene una categoría de producto por su ID
+ * @route   GET /api/category/:id
+ */
 export const getCategoryProductById = async (req, res) => {
     const { id } = req.params;
+    const sqlQuery = 'SELECT * FROM Category_Product WHERE categoryId = ?';
     try {
-        const [category] = await pool.query('CALL GetCategoryProduct(?)', [id]);
-        if (category.length > 0) {
-            res.status(200).json(category[0]);
-        } else {
-            res.status(404).json({ message: 'Category not found' });
-        }
+        const [category] = await pool.query(sqlQuery, [id]);
+        // Devolvemos el objeto directamente, no el array
+        handleResponse(res, category.length > 0 ? category[0] : [], null, 'Category not found', 'Error fetching category');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching category', error });
+        handleError(res, error, 'Error fetching category');
     }
 };
 
-export const UpdateCategoryProduct = async (req, res) => {
+/**
+ * @desc    Actualiza una categoría de producto
+ * @route   PUT /api/category/:id
+ */
+export const updateCategoryProduct = async (req, res) => {
     const { id } = req.params;
     const { name, img, description, weight } = req.body;
+    const sqlQuery = 'UPDATE Category_Product SET name = ?, img = ?, description = ?, weight = ? WHERE categoryId = ?';
     try {
-        await pool.query(
-            'CALL UpdateCategoryProduct(?, ?, ?, ?, ?)',
-            [id, name, img, description, weight]
-        );
-        res.status(200).json({ message: 'Category updated successfully' });
+        const [result] = await pool.query(sqlQuery, [name, img, description, weight, id]);
+        handleResponse(res, result, 'Category updated successfully', 'Category not found or no changes made', 'Error updating category', 200);
     } catch (error) {
-        res.status(500).json({ message: 'Error updating category', error });
+        handleError(res, error, 'Error updating category');
     }
 };
 
+/**
+ * @desc    Activa una categoría de producto
+ * @route   PATCH /api/category/:id/activate
+ */
 export const activateCategoryProduct = async (req, res) => {
     const { id } = req.params;
+    // Asumo que 'GetProductByCategory' busca en la tabla 'Product'
+    const checkProductsQuery = 'SELECT COUNT(*) as productCount FROM Product WHERE categoryId = ?';
+    const activateQuery = 'UPDATE Category_Product SET enable = TRUE WHERE categoryId = ?';
+
     try {
-        const [content] = await pool.query('CALL GetProductByCategory(?)', [id]);
-        if (content[0].length <= 0) {
-            return res.status(404).json({ message: 'Primero ponle contenido a la categoría!' });
+        // 1. Verificar si la categoría tiene productos asociados
+        const [rows] = await pool.query(checkProductsQuery, [id]);
+        const { productCount } = rows[0];
+
+        if (productCount === 0) {
+            return res.status(400).json({ message: 'Cannot activate a category with no products. Please add products first.' });
         }
 
-        await pool.query('CALL ActivateCategoryProduct(?)', [id]);
-        res.status(200).json({ message: 'Category activated successfully' });
+        // 2. Si tiene productos, activarla
+        const [result] = await pool.query(activateQuery, [id]);
+        handleResponse(res, result, 'Category activated successfully', 'Category not found', 'Error activating category', 200);
     } catch (error) {
-        res.status(500).json({ message: 'Error activating category', error });
+        handleError(res, error, 'Error activating category');
     }
 };
 
+/**
+ * @desc    Desactiva una categoría de producto
+ * @route   PATCH /api/category/:id/deactivate
+ */
 export const deactivateCategoryProduct = async (req, res) => {
     const { id } = req.params;
+    const sqlQuery = 'UPDATE Category_Product SET enable = FALSE WHERE categoryId = ?';
     try {
-        await pool.query('CALL DeactivateCategoryProduct(?)', [id]);
-        res.status(200).json({ message: 'Category deactivated successfully' });
+        const [result] = await pool.query(sqlQuery, [id]);
+        handleResponse(res, result, 'Category deactivated successfully', 'Category not found', 'Error deactivating category', 200);
     } catch (error) {
-        res.status(500).json({ message: 'Error deactivating category', error });
+        handleError(res, error, 'Error deactivating category');
     }
 };

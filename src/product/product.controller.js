@@ -1,145 +1,151 @@
-import { pool } from '../../configs/mysql.js'
+import { pool } from '../../configs/mysql.js';
 
+// Helper para manejar las respuestas y errores de forma consistente
+const handleResponse = (res, data, successMessage, notFoundMessage, errorMessage, statusCode = 200) => {
+    if (data && data.length > 0) {
+        res.status(statusCode).json(data);
+    } else if (data && data.affectedRows > 0) {
+        res.status(statusCode).json({ message: successMessage });
+    } else {
+        res.status(404).json({ message: notFoundMessage });
+    }
+};
+
+const handleError = (res, error, defaultMessage) => {
+    console.error(defaultMessage, error);
+    res.status(500).json({ message: defaultMessage, error: { message: error.message } });
+};
+
+/**
+ * @desc    Crea un nuevo producto
+ * @route   POST /api/product
+ */
 export const createProduct = async (req, res) => {
     const { name, img, description, categoryId, weight, price, discount, tax } = req.body;
+    const sqlQuery = `
+        INSERT INTO Product 
+        (name, img, description, categoryId, weight, price, discount, tax, enable, timeStamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, true, CURDATE())
+    `;
     try {
-        const [result] = await pool.query(
-            'CALL InsertProduct(?, ?, ?, ?, ?, ?, ?, ?)',
-            [name, img, description, categoryId, weight, price, discount, tax]
-        );
-        res.status(201).json({ message: 'Product created successfully', result });
+        const [result] = await pool.query(sqlQuery, [name, img, description, categoryId, weight, price, discount, tax]);
+        res.status(201).json({ message: 'Product created successfully', productId: result.insertId });
     } catch (error) {
-        res.status(500).json({ message: 'Error creating product', error });
+        handleError(res, error, 'Error creating product');
     }
 };
 
+/**
+ * @desc    Obtiene todos los productos con el nombre de su categoría
+ * @route   GET /api/product/all
+ */
 export const getAllProducts = async (req, res) => {
+    const sqlQuery = `
+        SELECT 
+            p.productId, p.name, p.img, p.description, c.name AS categoryName, 
+            p.categoryId, p.weight, p.price, p.discount, p.tax, p.enable, p.timeStamp
+        FROM Product p
+        JOIN Category_Product c ON p.categoryId = c.categoryId
+    `;
     try {
-        const [product] = await pool.query('CALL GetAllProducts()');
-        if (product.length > 0) {
-            res.status(200).json(product);
-        } else {
-            res.status(404).json({ message: 'No products in data base' });
-        }
+        const [products] = await pool.query(sqlQuery);
+        handleResponse(res, products, null, 'No products found in the database', 'Error fetching products');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching products', error });
+        handleError(res, error, 'Error fetching products');
     }
 };
 
+/**
+ * @desc    Obtiene solo los productos HABILITADOS
+ * @route   GET /api/product
+ */
 export const getAllGoodProducts = async (req, res) => {
+    const sqlQuery = 'SELECT * FROM Product WHERE enable = true';
     try {
-        const [products] = await pool.query('CALL GetAllGoodProducts()');
-        if (products.length > 0) {
-            res.status(200).json(products);
-        } else {
-            res.status(404).json({ message: 'No products in data base' });
-        }
+        const [products] = await pool.query(sqlQuery);
+        handleResponse(res, products, null, 'No enabled products found', 'Error fetching enabled products');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching products', error });
+        handleError(res, error, 'Error fetching enabled products');
     }
 };
 
+/**
+ * @desc    Obtiene un producto por su ID
+ * @route   GET /api/product/:id
+ */
 export const getProductById = async (req, res) => {
     const { id } = req.params;
+    const sqlQuery = 'SELECT * FROM Product WHERE productId = ?';
     try {
-        const [product] = await pool.query('CALL GetProduct(?)', [id]);
-        if (product.length > 0) {
-            res.status(200).json(product[0]);
-        } else {
-            res.status(404).json({ message: 'Product not found' });
-        }
+        const [product] = await pool.query(sqlQuery, [id]);
+        handleResponse(res, product.length > 0 ? product[0] : [], null, 'Product not found', 'Error fetching product');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching product', error });
+        handleError(res, error, 'Error fetching product');
     }
 };
 
-export const getProductsByType = async (req, res) => {
-    const { type } = req.body;
+/**
+ * @desc    Obtiene todos los productos de una categoría específica
+ * @route   GET /api/product/category/:categoryId
+ */
+export const getProductsByCategory = async (req, res) => {
+    const { categoryId } = req.params; // Cambiado de req.body a req.params para ser más RESTful
+    const sqlQuery = 'SELECT * FROM Product WHERE categoryId = ?';
     try {
-        const [product] = await pool.query('CALL GetProductByCategory(?)', [type]);
-        if (product.length > 0) {
-            res.status(200).json(product[0]);
-        } else {
-            res.status(404).json({ message: 'Product not found' });
-        }
+        const [products] = await pool.query(sqlQuery, [categoryId]);
+        handleResponse(res, products, null, 'No products found for this category', 'Error fetching products by category');
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching product', error });
+        handleError(res, error, 'Error fetching products by category');
     }
 };
 
+/**
+ * @desc    Actualiza un producto
+ * @route   PUT /api/product/:id
+ */
 export const updateProduct = async (req, res) => {
     const { id } = req.params;
     const { name, img, description, categoryId, weight, price, discount, tax } = req.body;
-    
+    const sqlQuery = `
+        UPDATE Product SET 
+            name = ?, img = ?, description = ?, categoryId = ?, 
+            weight = ?, price = ?, discount = ?, tax = ?, timeStamp = CURDATE()
+        WHERE productId = ?
+    `;
     try {
-        await pool.query(
-            'CALL UpdateProduct(?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, name, img, description, categoryId, weight, price, discount, tax]
-        );
-        res.status(200).json({ message: 'Product updated successfully' });
+        const [result] = await pool.query(sqlQuery, [name, img, description, categoryId, weight, price, discount, tax, id]);
+        handleResponse(res, result, 'Product updated successfully', 'Product not found or no changes made', 'Error updating product');
     } catch (error) {
-        res.status(500).json({ message: 'Error updating product', error });
+        handleError(res, error, 'Error updating product');
     }
 };
 
+/**
+ * @desc    Activa un producto
+ * @route   PATCH /api/product/:id/activate
+ */
 export const activateProduct = async (req, res) => {
     const { id } = req.params;
-
+    const sqlQuery = 'UPDATE Product SET enable = TRUE, timeStamp = CURDATE() WHERE productId = ?';
     try {
-        await pool.query('CALL ActivateProduct(?)', [id]);
-        res.status(200).json({ message: 'Product activated successfully' });
-
+        const [result] = await pool.query(sqlQuery, [id]);
+        handleResponse(res, result, 'Product activated successfully', 'Product not found', 'Error activating product');
     } catch (error) {
-        res.status(500).json({ message: 'Error activating product', error });
+        handleError(res, error, 'Error activating product');
     }
 };
 
+/**
+ * @desc    Desactiva un producto
+ * @route   PATCH /api/product/:id/deactivate
+ */
 export const deactivateProduct = async (req, res) => {
     const { id } = req.params;
+    const sqlQuery = 'UPDATE Product SET enable = FALSE, timeStamp = CURDATE() WHERE productId = ?';
     try {
-        await pool.query('CALL DeactivateProduct(?)', [id]);
-        res.status(200).json({ message: 'Product deactivated successfully' });
+        const [result] = await pool.query(sqlQuery, [id]);
+        handleResponse(res, result, 'Product deactivated successfully', 'Product not found', 'Error deactivating product');
     } catch (error) {
-        res.status(500).json({ message: 'Error deactivating product', error });
-    }
-};
-
-
-export const createImgProduct = async (req, res) => {
-    const { img, id } = req.body;
-    try {
-        const [result] = await pool.query(
-            'CALL InsertImgProduct(?, ?)',
-            [img, id]
-        );
-        res.status(201).json({ message: 'Img created successfully', result });
-    } catch (error) {
-        res.status(500).json({ message: 'Img creating event', error });
-    }
-};
-
-export const getImgsProduct = async (req, res) => {
-    const { id } = req.params;
-    console.log('id: ', id)
-    try {
-        const [icons] = await pool.query('CALL GetImgsProduct(?)', [id]);
-        console.log('imagenes: ', icons)
-        if (icons.length > 0) {
-            res.status(200).json(icons);
-        } else {
-            res.status(404).json({ message: 'No icons in data base' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching icons', error });
-    }
-};
-
-export const deleteImgProduct = async (req, res) => {
-    const { id } = req.params;
-    try {
-        await pool.query('CALL DeleteImgProduct(?)', [id]);
-        res.status(200).json({ message: 'Img delete successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting img', error });
+        handleError(res, error, 'Error deactivating product');
     }
 };
