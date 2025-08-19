@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/century/v1/(.*)",
+      "dest": "/index.js"
+    }
+  ],
+  "env": {
+    "DB_HOST": "@db_host",
+    "DB_USER": "@db_user",
+    "DB_PASSWORD": "@db_password",
+    "DB_NAME": "@db_name",
+    "PORT": "8080"
+  }
+}
