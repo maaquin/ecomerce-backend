@@ -93,7 +93,7 @@ export const getAllBills = async (req, res) => {
  * @desc    Obtiene una factura por su billCode.
  * @route   GET /api/bill/:billCode
  */
-export const getBillByCode = async (req, res) => {
+export const getBillById = async (req, res) => {
     const { billCode } = req.params; // Usar billCode para ser más explícito
     const sqlQuery = 'SELECT * FROM Bill WHERE billCode = ?';
     try {
