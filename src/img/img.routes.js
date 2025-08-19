@@ -1,51 +1,61 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import FileSend from 'file-send';
-import url from 'url';
+import { v2 as cloudinary } from 'cloudinary';
+import streamifier from 'streamifier'; // Necesitarás instalar esto: npm i streamifier
 
-// Obtener el directorio actual del módulo
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configuración de almacenamiento de Multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../public/uploads'));
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  }
+// --- 1. Configuración de Cloudinary ---
+// Se configura automáticamente si las variables de entorno están presentes.
+// Asegúrate de tener CLOUDINARY_URL o las 3 variables individuales en Vercel.
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
+// --- 2. Configuración de Multer ---
+// Usamos memoryStorage porque no necesitamos guardar el archivo en el disco de Vercel.
+// Lo procesamos en memoria y lo enviamos directamente a Cloudinary.
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const router = express.Router();
 
-// Ruta para subir imágenes
-router.post('/', upload.single('file'), (req, res) => {
+router.post('/', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No se subió ningún archivo.' });
   }
-  res.json({ message: 'Archivo subido con éxito', file: req.file });
-});
 
-// Ruta para servir imágenes estáticas
-router.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
+  const uploadFromBuffer = (buffer) => {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          // Puedes añadir opciones aquí, como la carpeta donde se guardará
+          folder: 'ecommerce_products'
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+      streamifier.createReadStream(buffer).pipe(uploadStream);
+    });
+  };
 
-router.get('/uploads/*', (req, res, next) => {
-  const filePath = path.join(__dirname, '../../public/uploads', url.parse(req.url).pathname.replace('/uploads/', ''));
-  new FileSend(req, filePath, {
-    root: path.join(__dirname, '../../public/uploads'),
-    etag: true,
-    maxAge: '30d'
-  })
-    .on('error', function (error) {
-      // Manejo de errores
-      res.status(500).json({ message: 'Error al servir el archivo', error: error.message });
-    })
-    .pipe(res);
+  try {
+    const result = await uploadFromBuffer(req.file.buffer);
+
+    res.status(200).json({
+      message: 'Archivo subido con éxito a Cloudinary',
+      imageUrl: result.secure_url
+    });
+  } catch (error) {
+    console.error('Error al subir a Cloudinary:', error);
+    res.status(500).json({ message: 'Error al subir el archivo', error: error.message });
+  }
 });
 
 export default router;
