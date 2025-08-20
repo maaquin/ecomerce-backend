@@ -165,6 +165,7 @@ export const getAllBills = async (req, res) => {
  */
 export const getBillById = async (req, res) => {
     const { billCode } = req.params;
+    console.log(`RECIBIDO billCode: |${billCode}|`);
     const sqlQuery = 'SELECT * FROM Bill WHERE billCode = ?';
     try {
         // 1. Ejecutamos la consulta
