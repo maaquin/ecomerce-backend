@@ -2,6 +2,7 @@ import { Router } from "express";
 import { 
     getConfig,
     updateConfig,
+    getConfigFront,
 
     verifyLink,
     verifyToken
@@ -10,6 +11,7 @@ import {
 const router = Router();
 
 router.get("/", getConfig);
+router.get("/front", getConfigFront);
 router.put("/", updateConfig);
 
 router.get("/verify", verifyToken);

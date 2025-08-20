@@ -31,6 +31,30 @@ export const getConfig = async (req, res) => {
         }
 
         // Devolvemos el primer y único objeto de configuración
+        res.status(200).json(configRows);
+    } catch (error) {
+        handleError(res, error, 'Error fetching system configuration');
+    }
+};
+
+export const getConfigFront = async (req, res) => {
+    const selectQuery = 'SELECT * FROM Config LIMIT 1';
+    const insertQuery = `
+        INSERT INTO Config (name, email, phone, pass, adress, nit, imgLogo, msgSoldOut, msgSale, msgThanks)
+        VALUES ("century", 'ejemplo@email.com', '12345678', 'pass', "Guatemala", "000000000", "logo", "Agotado!", "Ultimas unidades", "Gracias por comprar con nosotros!")
+    `;
+
+    try {
+        let [configRows] = await pool.query(selectQuery);
+
+        // Si no hay configuración, la creamos
+        if (configRows.length === 0) {
+            await pool.query(insertQuery);
+            // Volvemos a solicitarla para enviarla al cliente
+            [configRows] = await pool.query(selectQuery);
+        }
+
+        // Devolvemos el primer y único objeto de configuración
         res.status(200).json(configRows[0]);
     } catch (error) {
         handleError(res, error, 'Error fetching system configuration');
