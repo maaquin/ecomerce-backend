@@ -168,7 +168,7 @@ export const getBillById = async (req, res) => {
     const sqlQuery = 'SELECT * FROM Bill WHERE billCode = ?';
     try {
         const [bill] = await pool.query(sqlQuery, [billCode]);
-        handleResponse(res, bill.length > 0 ? bill[0] : [], null, 'Bill not found', 'Error fetching bill');
+        handleResponse(res, bill, null, 'Bill not found', 'Error fetching bill');
     } catch (error) {
         handleError(res, error, 'Error fetching bill');
     }
