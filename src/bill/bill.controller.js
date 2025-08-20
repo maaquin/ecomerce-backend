@@ -66,11 +66,84 @@ export const createBill = async (req, res) => {
         `).join('');
 
         // 4. Preparar y enviar correo al cliente
-        const mailOptions = { /* ... Opciones de correo para el cliente ... */ };
+        const mailOptions = {
+
+            from: user,
+
+            to: email,
+
+            subject: "Recibo de tu pedido",
+
+            html: `
+                <div style="font-family: Arial, sans-serif; line-height:1.5; color:#333;">
+                <h2>¡Tu pedido ha sido recibido! 🎉</h2>
+                <p>Gracias por comprar con nosotros. Estamos procesando tu pedido y recibirás notificaciones del proceso por teléfono o correo electrónico.</p>
+               
+                <p><strong>Estado del pedido:</strong> ${status}</p>
+                <p><strong>Total del pedido:</strong> Q${total}</p>
+                <p><strong>Código de seguimiento:</strong> ${billCode}</p>
+
+                <h3>Detalles de tu pedido:</h3>
+                <table style="border-collapse: collapse; width:100%; margin-top:10px;">
+                    <thead>
+                    <tr style="background:#f4f4f4;">
+                        <th style="padding:8px; border:1px solid #ddd;">Producto</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Cantidad</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Precio</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    ${productsList}
+                    </tbody>
+                </table>
+
+                <p style="margin-top:20px;">Si tienes alguna duda, puedes responder a este correo o contactarnos por nuestros canales de atención.</p>
+                </div>
+            `
+
+        };
         await transporter.sendMail(mailOptions);
-        
+
         // 5. Preparar y enviar correo al administrador
-        const adminMailOptions = { /* ... Opciones de correo para el admin ... */ };
+        const adminMailOptions = {
+
+            from: user,
+
+            to: user,
+
+            subject: `Nuevo pedido recibido - Código ${billCode}`,
+
+            html: `
+                <div style="font-family: Arial, sans-serif; line-height:1.5; color:#333;">
+                <h2>📦 Nuevo pedido recibido</h2>
+                <p><strong>Cliente:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Teléfono:</strong> ${phone}</p>
+                <p><strong>Dirección de envío:</strong> ${address}</p>
+                <p><strong>Método de pago:</strong> ${metodPayment}</p>
+                <p><strong>Comentario:</strong> ${comment || 'N/A'}</p>
+                <p><strong>Total:</strong> Q${total}</p>
+                <p><strong>Código de seguimiento:</strong> ${billCode}</p>
+
+                <h3>Productos:</h3>
+                <table style="border-collapse: collapse; width:100%; margin-top:10px;">
+                    <thead>
+                    <tr style="background:#f4f4f4;">
+                        <th style="padding:8px; border:1px solid #ddd;">Producto</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Cantidad</th>
+                        <th style="padding:8px; border:1px solid #ddd;">Precio</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    ${productsList}
+                    </tbody>
+                </table>
+
+                <p style="margin-top:20px;">Ingresa al panel administrativo para gestionar este pedido.</p>
+                </div>
+            `
+
+        };
         await transporter.sendMail(adminMailOptions);
 
         res.status(201).json({ sent: true, message: 'Bill created and emails sent successfully.' });
