@@ -75,8 +75,8 @@ export const getCategoryProductById = async (req, res) => {
     const sqlQuery = 'SELECT * FROM Category_Product WHERE categoryId = ?';
     try {
         const [category] = await pool.query(sqlQuery, [id]);
-        // Devolvemos el objeto directamente, no el array
-        handleResponse(res, category.length > 0 ? category[0] : [], null, 'Category not found', 'Error fetching category');
+        // Pasamos el array completo. handleResponse lo manejará correctamente.
+        handleResponse(res, category, null, 'Category not found', 'Error fetching category');
     } catch (error) {
         handleError(res, error, 'Error fetching category');
     }
