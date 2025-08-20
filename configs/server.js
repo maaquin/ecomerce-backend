@@ -43,6 +43,30 @@ class Server {
     }
 
     middlewares() {
+        this.app.use((req, res, next) => {
+            const origin = req.headers.origin;
+            const allowedOrigins = [
+                'http://localhost:5173',
+                'http://localhost:5174',
+                // Añade aquí tu URL de producción del frontend si la tienes
+            ];
+
+            if (allowedOrigins.includes(origin)) {
+                res.setHeader('Access-Control-Allow-Origin', origin);
+            }
+
+            res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            res.header('Access-Control-Allow-Credentials', true);
+
+            // Si es una petición OPTIONS, termina aquí con un 204 (No Content)
+            if (req.method === 'OPTIONS') {
+                return res.sendStatus(204);
+            }
+
+            next();
+        });
+
         this.app.use(express.urlencoded({ extended: false }));
         this.app.options('*', cors(corsOptions));
         this.app.use(cors(corsOptions));
