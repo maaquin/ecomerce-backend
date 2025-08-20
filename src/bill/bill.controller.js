@@ -164,12 +164,11 @@ export const getAllBills = async (req, res) => {
  * @route   GET /api/bill/:billCode
  */
 export const getBillById = async (req, res) => {
-    const { billCode } = req.params;
-    console.log(`RECIBIDO billCode: |${billCode}|`);
+    const { id } = req.params;
     const sqlQuery = 'SELECT * FROM Bill WHERE billCode = ?';
     try {
         // 1. Ejecutamos la consulta
-        const [billRows] = await pool.query(sqlQuery, [billCode]);
+        const [billRows] = await pool.query(sqlQuery, [id]);
 
         // 2. Verificamos si el array de resultados tiene algo
         if (billRows) {
