@@ -83,7 +83,7 @@ export const getProductById = async (req, res) => {
     const sqlQuery = 'SELECT * FROM Product WHERE productId = ?';
     try {
         const [product] = await pool.query(sqlQuery, [id]);
-        handleResponse(res, product.length > 0 ? product[0] : [], null, 'Product not found', 'Error fetching product');
+        handleResponse(res, product, null, 'Product not found', 'Error fetching product');
     } catch (error) {
         handleError(res, error, 'Error fetching product');
     }
