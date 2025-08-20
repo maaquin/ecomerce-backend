@@ -170,12 +170,10 @@ export const getBillById = async (req, res) => {
         // 1. Ejecutamos la consulta
         const [billRows] = await pool.query(sqlQuery, [billCode]);
 
-        console.log(billRows)
-
         // 2. Verificamos si el array de resultados tiene algo
-        if (billRows.length > 0) {
+        if (billRows) {
             // Si encontramos la factura, la devolvemos con un 200 OK
-            res.status(200).json(billRows[0]); // Enviamos el objeto, no el array
+            res.status(200).json(billRows); // Enviamos el objeto, no el array
         } else {
             // Si el array está vacío, devolvemos un 404 Not Found
             res.status(404).json({ message: 'Bill not found' });
