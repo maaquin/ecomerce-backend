@@ -44,6 +44,10 @@ class Server {
 
     middlewares() {
         this.app.use(express.urlencoded({ extended: false }));
+        this.app.use((req, res, next) => {
+            res.header('Vary', 'Origin');
+            next();
+        });
         this.app.use(cors(corsOptions));
         this.app.use(express.json());
         this.app.use(helmet());
