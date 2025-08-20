@@ -52,8 +52,8 @@ export const createBill = async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: config.sender_email,
-                pass: config.sender_pass
+                user: config.email,
+                pass: config.pass
             }
         });
 
@@ -67,13 +67,9 @@ export const createBill = async (req, res) => {
 
         // 4. Preparar y enviar correo al cliente
         const mailOptions = {
-
-            from: user,
-
+            from: config.email,
             to: email,
-
             subject: "Recibo de tu pedido",
-
             html: `
                 <div style="font-family: Arial, sans-serif; line-height:1.5; color:#333;">
                 <h2>¡Tu pedido ha sido recibido! 🎉</h2>
@@ -106,13 +102,9 @@ export const createBill = async (req, res) => {
 
         // 5. Preparar y enviar correo al administrador
         const adminMailOptions = {
-
-            from: user,
-
-            to: user,
-
+            from: config.email,
+            to: config.email,
             subject: `Nuevo pedido recibido - Código ${billCode}`,
-
             html: `
                 <div style="font-family: Arial, sans-serif; line-height:1.5; color:#333;">
                 <h2>📦 Nuevo pedido recibido</h2>
