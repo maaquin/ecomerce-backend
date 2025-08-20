@@ -31,7 +31,7 @@ export const getConfig = async (req, res) => {
         }
 
         // Devolvemos el primer y único objeto de configuración
-        res.status(200).json(configRows);
+        res.status(200).json(configRows[0]);
     } catch (error) {
         handleError(res, error, 'Error fetching system configuration');
     }
