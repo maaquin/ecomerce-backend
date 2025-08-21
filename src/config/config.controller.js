@@ -144,8 +144,8 @@ export const verifyLink = async (req, res) => {
     }
 
     try {
-        // const captchaValido = await validarCaptcha(captcha);
-        // if (!captchaValido) return res.status(400).json({ sent: false, message: "Invalid captcha" });
+        const captchaValido = await validarCaptcha(captcha);
+        if (!captchaValido) return res.status(400).json({ sent: false, message: "Invalid captcha" });
 
         // 1. Obtener la configuración para las credenciales del correo
         const [configRows] = await pool.query('SELECT email as sender_email, pass as sender_pass FROM Config LIMIT 1');
