@@ -188,7 +188,7 @@ export const getBillById = async (req, res) => {
  * @route   PUT /api/bill/:billId
  */
 export const updateBill = async (req, res) => {
-    const { billId } = req.params;
+    const { id } = req.params;
     const { address, bill, comment, metodPayment, name, phone, shipment, status } = req.body;
 
     const sqlQuery = `
@@ -199,7 +199,7 @@ export const updateBill = async (req, res) => {
         WHERE billId = ?
     `;
     try {
-        const [result] = await pool.query(sqlQuery, [address,name,phone, bill,comment,metodPayment,status,shipment, billId]);
+        const [result] = await pool.query(sqlQuery, [address,name,phone, bill,comment,metodPayment,status,shipment, id]);
         console.log(result);
         handleResponse(res, result, 'Bill updated successfully', 'Bill not found or no changes made', 'Error updating bill');
     } catch (error) {
