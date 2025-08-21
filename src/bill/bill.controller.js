@@ -199,7 +199,7 @@ export const updateBill = async (req, res) => {
         WHERE billId = ?
     `;
     try {
-        const [result] = await pool.query(sqlQuery, [address, bill, comment, metodPayment, name, phone, shipment, status, billId]);
+        const [result] = await pool.query(sqlQuery, [address,name,phone, bill,comment,metodPayment,status,shipment, billId]);
         handleResponse(res, result, 'Bill updated successfully', 'Bill not found or no changes made', 'Error updating bill');
     } catch (error) {
         handleError(res, error, 'Error updating bill');
