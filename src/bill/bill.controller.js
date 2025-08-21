@@ -190,7 +190,6 @@ export const getBillById = async (req, res) => {
 export const updateBill = async (req, res) => {
     const { billId } = req.params;
     const { address, bill, comment, metodPayment, name, phone, shipment, status } = req.body;
-    const productsJSON = JSON.stringify(products);
 
     const sqlQuery = `
         UPDATE Bill SET 
@@ -200,7 +199,7 @@ export const updateBill = async (req, res) => {
         WHERE billId = ?
     `;
     try {
-        const [result] = await pool.query(sqlQuery, [address, bill, comment, metodPayment, name, phone, shipment, status]);
+        const [result] = await pool.query(sqlQuery, [address, bill, comment, metodPayment, name, phone, shipment, status, billId]);
         handleResponse(res, result, 'Bill updated successfully', 'Bill not found or no changes made', 'Error updating bill');
     } catch (error) {
         handleError(res, error, 'Error updating bill');
